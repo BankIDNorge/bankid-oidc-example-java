@@ -27,18 +27,18 @@ public class WelcomeServlet extends HttpServlet {
 
         response.getWriter().append("<html>")
                 .append("<head></head><body>")
-                .append("<h1>Velkommen til OpenID Connect testapp i Java</h1>");
+                .append("<h1>Welcome to BankID OpenID Connect test app in Java</h1>");
 
         if (user == null) {
             response.getWriter()
-                    .append("<p>Du er ikke logget inn.</p>")
-                    .append("<a href=\"/login\">Logg inn</a>");
+                    .append("<p>You are not logged in </p>")
+                    .append("<a href=\"/login\">Login</a>");
         } else {
 
             JSONObject userInfo = BankIdOIDCClient.getInstance().getUserInfo(user);
 
                 response.getWriter()
-                        .append(String.format("<p>Du er logget inn som</p><p>%s</p>", user.getName()))
+                        .append(String.format("<p>You are logged in as; </p><p>%s</p>", user.getName()))
                         .append("<h2>Access token</h2>")
                         .append(String.format("<p>%s</p>", user.getAccessToken()))
                         .append(prettifyJSON(user.getAccessTokenPayload()))
