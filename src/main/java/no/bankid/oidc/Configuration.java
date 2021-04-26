@@ -51,7 +51,7 @@ class Configuration {
     /**
      * Client_id and secret must be inserted here for the application to work.
      * <p>
-     * See https://confluence.bankidnorge.no/confluence/pdoidcl/release-notes/provisioning for details on how to receive this.
+     * See https://confluence.bankidnorge.no/confluence/pdoidcl/developer-resources/provisioning for details on how to receive this.
      */
     public static final String CLIENT_ID = "<INSERT YOUR CLIENT-ID HERE>";
     public static final String CLIENT_SECRET = "<INSERT YOUR CLIENT-SECRET HERE";
