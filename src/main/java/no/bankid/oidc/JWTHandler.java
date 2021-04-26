@@ -20,7 +20,9 @@ class JWTHandler {
     public JWTHandler(String jwsKeysUri) {
         try {
             publicKeys = JWKSet.load(new URL(jwsKeysUri));
+            LOGGER.info("Got public keys from OIDC");
         } catch (IOException | ParseException e) {
+            LOGGER.severe("Could not get public keys from OIDC");
             throw new RuntimeException(e);
         }
     }

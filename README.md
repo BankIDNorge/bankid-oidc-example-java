@@ -5,6 +5,7 @@ OpenID Connect Server (BID OIDC) developed for BankID Norge AS.
 When the user is authenticated you will see the result from a call to UserInfo
 RESTful service and the contents of the `id_token` which was returned from BID OIDC.
 
+BankID OIDC documentation can be found [here](https://confluence.bankidnorge.no/confluence/pdoidcl).
 ## Note
 
 This client uses the stable CURRENT environment, which is set up with the BankID Preprod user-database.
@@ -50,7 +51,7 @@ Run with [Maven](https://maven.apache.org) and [jetty](https://www.eclipse.org/j
 mvn clean install
 mvn jetty:run
 ```
-
+Available at https://localhost:8443
 
 ## Dependencies
 
