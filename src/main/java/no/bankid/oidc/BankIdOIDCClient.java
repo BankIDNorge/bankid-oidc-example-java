@@ -12,13 +12,16 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import static java.net.URLEncoder.encode;
 import static no.bankid.oidc.Configuration.*;
 
 public class BankIdOIDCClient {
+
+    private static final Logger LOGGER = Logger.getLogger(BankIdOIDCClient.class.getName());
 
     private final String authorizationEndpoint;
     private final String token_endpoint;
@@ -43,14 +46,18 @@ public class BankIdOIDCClient {
         Client client = ClientBuilder.newClient();
         Response response = client.target(CONFIG_URL).request().get();
 
-        JSONObject configuration = new JSONObject(response.readEntity(String.class));
-
-        this.authorizationEndpoint = configuration.getString("authorization_endpoint");
-        this.token_endpoint = configuration.getString("token_endpoint");
-        this.userinfo_endpoint = configuration.getString("userinfo_endpoint");
-
-        // JWTHandler fetches the key from jwks_uri
-        JWTHandler = new JWTHandler(configuration.getString("jwks_uri"));
+        if(response.getStatus()==200){
+            LOGGER.info("Got .well-known-configuration from OIDC ");
+            JSONObject configuration = new JSONObject(response.readEntity(String.class));
+            this.authorizationEndpoint = configuration.getString("authorization_endpoint");
+            this.token_endpoint = configuration.getString("token_endpoint");
+            this.userinfo_endpoint = configuration.getString("userinfo_endpoint");
+            // JWTHandler fetches the keys from jwks_uri
+            JWTHandler = new JWTHandler(configuration.getString("jwks_uri"));
+        } else {
+            LOGGER.severe("Could not fetch .well-known-config"); //Should be handled
+            throw new RuntimeException();
+        }
     }
 
     /**
@@ -71,7 +78,7 @@ public class BankIdOIDCClient {
      * This will be done with a POST against the token_endpoint.
      * the 'code' is attached in the body (x-www-form-urlencoded)
      * The endpoint requires basic auth.
-     * https://confluence.bankidnorge.no/confluence/pdoidcl/technical-documentation/rest-api/token
+     * https://confluence.bankidnorge.no/confluence/pdoidcl/technical-documentation/api/token
      * <p>
      * Finally, we put the access_token and id_token in a User object. It may typically be stored on the session.
      */
@@ -80,7 +87,7 @@ public class BankIdOIDCClient {
 
         WebTarget target = client.target(token_endpoint);
 
-        MultivaluedMap<String, String> formData = new MultivaluedHashMap<String, String>();
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         formData.add("grant_type", "authorization_code");
         formData.add("code", code);
         formData.add("redirect_uri", CALLBACK_URL);
@@ -89,12 +96,16 @@ public class BankIdOIDCClient {
                 .header("Authorization", "Basic " + java.util.Base64.getEncoder().encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes()))
                 .post(Entity.form(formData));
 
-        JSONObject json = new JSONObject(response.readEntity(String.class));
-
-        String access_token = json.getString("access_token");
-        String id_token = json.getString("id_token");
-
-        return new User(access_token, JWTHandler.getPayload(access_token), id_token, JWTHandler.getPayload(id_token));
+        if(response.getStatus()== 200){
+            LOGGER.info("Got access_token from OIDC");
+            JSONObject json = new JSONObject(response.readEntity(String.class));
+            String access_token = json.getString("access_token");
+            String id_token = json.getString("id_token");
+            return new User(access_token, JWTHandler.getPayload(access_token), id_token, JWTHandler.getPayload(id_token));
+        } else {
+            LOGGER.severe(response.toString());
+            return null; // Should be handled
+        }
     }
 
     /**
@@ -107,10 +118,14 @@ public class BankIdOIDCClient {
         client.register(feature);
 
         Response response = client.target(userinfo_endpoint).request().get();
-        if (response.getStatus()==401) {
-            return null;
-        } else
+        if (response.getStatus()==200) {
+            LOGGER.info("Got userinfo back from OIDC");
             return JWTHandler.getPayload(response.readEntity(String.class));
+        } else {
+            LOGGER.warning(response.toString());
+            return null; //Should be handled
+        }
+
     }
 
 
@@ -119,7 +134,7 @@ public class BankIdOIDCClient {
      */
     private static String encoded(String s) {
         try {
-            return encode(s, Charset.forName("UTF-8").name());
+            return encode(s, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException(e);
         }
