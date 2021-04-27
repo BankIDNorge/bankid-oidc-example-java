@@ -26,7 +26,7 @@ public class BankIdOIDCClient {
     private final String authorizationEndpoint;
     private final String token_endpoint;
     private final String userinfo_endpoint;
-    private final JWTHandler JWTHandler;
+    private final JWTHandler jwtHandler;
 
     private static BankIdOIDCClient bankIdOIDCClient;
 
@@ -53,7 +53,7 @@ public class BankIdOIDCClient {
             this.token_endpoint = configuration.getString("token_endpoint");
             this.userinfo_endpoint = configuration.getString("userinfo_endpoint");
             // JWTHandler fetches the keys from jwks_uri
-            JWTHandler = new JWTHandler(configuration.getString("jwks_uri"));
+            jwtHandler = new JWTHandler(configuration.getString("jwks_uri"));
         } else {
             LOGGER.severe("Could not fetch .well-known-config"); //Should be handled
             throw new RuntimeException();
@@ -101,7 +101,7 @@ public class BankIdOIDCClient {
             JSONObject json = new JSONObject(response.readEntity(String.class));
             String access_token = json.getString("access_token");
             String id_token = json.getString("id_token");
-            return new User(access_token, JWTHandler.getPayload(access_token), id_token, JWTHandler.getPayload(id_token));
+            return new User(access_token, jwtHandler.getPayload(access_token), id_token, jwtHandler.getPayload(id_token));
         } else {
             LOGGER.severe(response.toString());
             return null; // Should be handled
@@ -120,10 +120,10 @@ public class BankIdOIDCClient {
         Response response = client.target(userinfo_endpoint).request().get();
         if (response.getStatus()==200) {
             LOGGER.info("Got userinfo back from OIDC");
-            return JWTHandler.getPayload(response.readEntity(String.class));
+            return jwtHandler.getPayload(response.readEntity(String.class));
         } else {
-            LOGGER.warning(response.toString());
-            return null; //Should be handled
+            LOGGER.severe(response.toString());
+            return null; //Todo Should be handled
         }
 
     }
