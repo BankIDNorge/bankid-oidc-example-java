@@ -33,22 +33,23 @@ class JWTHandler {
         try {
             JWSObject jwsObject = JWSObject.parse(jws);
             String kid = jwsObject.getHeader().getKeyID();
-            KeyType keyType = publicKeys.getKeyByKeyId(kid).getKeyType();
+            JWK key = publicKeys.getKeyByKeyId(kid);
+            KeyType keyType = key.getKeyType();
             boolean signatureIsOK = false;
 
             if (KeyType.RSA.equals(keyType)) {
                 signatureIsOK = jwsObject.verify(new RSASSAVerifier((RSAKey)
-                        publicKeys.getKeyByKeyId(kid)));
+                        key));
             } else if (KeyType.EC.equals(keyType)) {
-                signatureIsOK = jwsObject.verify(new ECDSAVerifier((ECKey) publicKeys.getKeyByKeyId(kid)));
+                signatureIsOK = jwsObject.verify(new ECDSAVerifier((ECKey) key));
             }
             if (!signatureIsOK) {
                 LOGGER.severe("Signature in jwk could not be verified.");
-                // Should be handled.
+                // Todo Should be handled.
             } else LOGGER.info("Signature in JWK is valid");
 
             return new JSONObject(jwsObject.getPayload().toString());
-        } catch (ParseException | JOSEException e) {
+        } catch (ParseException | JOSEException | NullPointerException e) {
             LOGGER.severe(e.toString());
             throw new RuntimeException(e);
         }
