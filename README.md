@@ -29,7 +29,7 @@ The application exemplifies all steps of the OIDC authentication process.
 
 To be able to run the application you will need to edit the `client_id` and
 `client_secret` in `Configuration.java`.
-See https://confluence.bankidnorge.no/confluence/pdoidcl/release-notes/provisioning for details on how to receive this.
+See https://confluence.bankidnorge.no/confluence/pdoidcl/developer-resources/provisioning for details on how to receive this.
 
 
 ```java
