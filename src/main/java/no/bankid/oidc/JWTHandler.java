@@ -2,18 +2,20 @@ package no.bankid.oidc;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.KeyException;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.*;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
-import java.util.List;
+import java.util.logging.Logger;
 
 class JWTHandler {
+
+    private static final Logger LOGGER = Logger.getLogger(JWTHandler.class.getName());
 
     private final JWKSet publicKeys;
 
@@ -25,21 +27,34 @@ class JWTHandler {
         }
     }
 
+    /**
+     * Extracts information from token and validates signature
+     */
     public JSONObject getPayload(String jws) {
         try {
-            List<JWK> keys = publicKeys.getKeys();
-
             JWSObject jwsObject = JWSObject.parse(jws);
-            boolean signatureIsOK = jwsObject.verify(new RSASSAVerifier((RSAKey) keys.get(0)));
-
-            if (!signatureIsOK) {
-                System.out.println("Signature in jwk could not be verified.");
-                // Should be handled
+            String kid = jwsObject.getHeader().getKeyID();
+            JWK key = publicKeys.getKeyByKeyId(kid);
+            if (key == null) {
+                throw new KeyException(String.format("Could not find key with kid: %s", kid));
             }
+            KeyType keyType = key.getKeyType();
+            boolean signatureIsOK = false;
+
+            if (KeyType.RSA.equals(keyType)) {
+                signatureIsOK = jwsObject.verify(new RSASSAVerifier((RSAKey)
+                        key));
+            } else if (KeyType.EC.equals(keyType)) {
+                signatureIsOK = jwsObject.verify(new ECDSAVerifier((ECKey) key));
+            }
+            if (!signatureIsOK) {
+                LOGGER.severe("Signature in jwk could not be verified.");
+                // Todo Should be handled.
+            } else LOGGER.info("Signature in JWK is valid");
 
             return new JSONObject(jwsObject.getPayload().toString());
-
-        } catch (ParseException | JOSEException e) {
+        } catch (ParseException | JOSEException | NullPointerException e) {
+            LOGGER.severe(e.toString());
             throw new RuntimeException(e);
         }
     }

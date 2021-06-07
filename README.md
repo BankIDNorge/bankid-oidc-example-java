@@ -10,6 +10,7 @@ RESTful service and the contents of the `id_token` which was returned from BID O
 This client uses the stable CURRENT environment, which is set up with the BankID Preprod user-database.
 New test users can be created self-serviced at https://ra-preprod.bankidnorge.no/
 
+BankID OIDC documentation can be found [here](https://confluence.bankidnorge.no/confluence/pdoidcl).
 
 ## Process flow
 
@@ -31,7 +32,6 @@ To be able to run the application you will need to edit the `client_id` and
 `client_secret` in `Configuration.java`.
 See https://confluence.bankidnorge.no/confluence/pdoidcl/release-notes/provisioning for details on how to receive this.
 
-
 ```java
 class Configuration {
 
@@ -51,6 +51,7 @@ mvn clean install
 mvn jetty:run
 ```
 
+Available at https://localhost:8443
 
 ## Dependencies
 
