@@ -2,6 +2,7 @@ package no.bankid.oidc;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.KeyException;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.*;
@@ -34,6 +35,9 @@ class JWTHandler {
             JWSObject jwsObject = JWSObject.parse(jws);
             String kid = jwsObject.getHeader().getKeyID();
             JWK key = publicKeys.getKeyByKeyId(kid);
+            if (key == null) {
+                throw new KeyException(String.format("Could not find key with kid: %s", kid));
+            }
             KeyType keyType = key.getKeyType();
             boolean signatureIsOK = false;
 
